@@ -1,0 +1,7 @@
+flask
+gunicorn
+pyotp
+cryptography
+flask-cors
+flask-mail
+python-dotenv
