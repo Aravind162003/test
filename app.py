@@ -14,25 +14,45 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "super_secure_key")
 # ==========================================
 # 📧 EMAIL CONFIGURATION
 # ==========================================
-SENDER_EMAIL = "cloudserversecure001@gmail.com" # <--- PUT YOUR GMAIL HERE
-APP_PASSWORD = "nafaywvjemqzrfjy" # <--- PUT YOUR APP PASSWORD HERE
+SENDER_EMAIL = os.getenv("SENDER_EMAIL")
+APP_PASSWORD = os.getenv("APP_PASSWORD")
 
 def send_real_email(receiver_email, otp_code, filename, algo):
     """Sends the OTP via real Gmail servers."""
+
     try:
         msg = EmailMessage()
-        msg.set_content(f"Hello!\n\nA secure file '{filename}' has been shared with you via the Energy-Aware Cloud Vault.\n\nYour {algo} One-Time Password (OTP) to unlock this file is: {otp_code}\n\nWARNING: This code will expire in 2 minutes and can only be used ONCE.\nDo not share this code with anyone.")
+
+        msg.set_content(
+            f"Hello!\n\n"
+            f"A secure file '{filename}' has been shared with you.\n\n"
+            f"Your {algo} OTP is: {otp_code}\n\n"
+            f"WARNING: This code expires in 2 minutes."
+        )
+
         msg['Subject'] = 'Secure Cloud Vault - Your OTP Code'
         msg['From'] = SENDER_EMAIL
         msg['To'] = receiver_email
 
-        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+        server = smtplib.SMTP_SSL(
+            'smtp.gmail.com',
+            465,
+            timeout=15
+        )
+
         server.login(SENDER_EMAIL, APP_PASSWORD)
+
         server.send_message(msg)
+
         server.quit()
+
+        print("Email sent successfully")
+
         return True
+
     except Exception as e:
-        print(f"Failed to send email: {e}")
+        import traceback
+        print(traceback.format_exc())
         return False
 
 # ==========================================
@@ -162,7 +182,7 @@ def share_file(file_id):
         FILES_DB[file_id]['shared_with'][target_username] = {
             'secret': secret,
             'algo': otp_algo,
-            'timestamp': time.time() # Records current time in seconds
+            'timestamp': time.time()
         }
         
         # 3. Send Email
@@ -201,7 +221,6 @@ def verify_otp(file_id):
         
         # FIX 1: CHECK TIME EXPIRATION (120 seconds = 2 minutes)
         if time.time() - generated_time > 120:
-            # If expired, delete it so it can never be guessed
             del file_data['shared_with'][current_user]
             flash(" Security Alert: This OTP has expired after 2 minutes. Ask the sender to share the file again.", "error")
             return redirect(url_for('dashboard'))
@@ -216,22 +235,25 @@ def verify_otp(file_id):
             is_valid = totp.verify_otp(secret, user_input_otp)
         
         if is_valid:
-            # BUG FIX 3: ENFORCE SINGLE USE!
-            # Delete the permission from the database so the OTP can NEVER be used again.
             del file_data['shared_with'][current_user]
             
-            # Decrypt and send file
             enc_path = f"storage/encrypted_files/locked_{file_id}.enc"
             dec_path = f"storage/decrypted_files/unlocked_{file_data['filename']}"
             
             crypt_algo = file_data['algo']
             key = file_data['key']
             
-            if crypt_algo == "AES-128": aes128.decrypt_file(enc_path, dec_path, key)
-            elif crypt_algo == "AES-256": aes256.decrypt_file(enc_path, dec_path, key)
-            elif crypt_algo == "ChaCha20": chacha20.decrypt_file(enc_path, dec_path, key)
+            if crypt_algo == "AES-128":
+                aes128.decrypt_file(enc_path, dec_path, key)
+
+            elif crypt_algo == "AES-256":
+                aes256.decrypt_file(enc_path, dec_path, key)
+
+            elif crypt_algo == "ChaCha20":
+                chacha20.decrypt_file(enc_path, dec_path, key)
             
             return send_file(dec_path, as_attachment=True)
+
         else:
             flash("Invalid OTP Code. Access Denied.", "error")
             
@@ -247,11 +269,9 @@ def logout():
     session.pop('user', None)
     return redirect(url_for('login'))
 
-
 os.makedirs("storage/encrypted_files", exist_ok=True)
 os.makedirs("storage/decrypted_files", exist_ok=True)
 os.makedirs("test_data", exist_ok=True)
-
 
 if __name__ == '__main__':
     print("Starting Secure Cloud Server...")
