@@ -18,7 +18,7 @@ SENDER_EMAIL = os.getenv("SENDER_EMAIL")
 APP_PASSWORD = os.getenv("APP_PASSWORD")
 
 def send_real_email(receiver_email, otp_code, filename, algo):
-    """Sends the OTP via real Gmail servers."""
+    """Sends the OTP via Gmail SMTP."""
 
     try:
         msg = EmailMessage()
@@ -34,13 +34,18 @@ def send_real_email(receiver_email, otp_code, filename, algo):
         msg['From'] = SENDER_EMAIL
         msg['To'] = receiver_email
 
-        server = smtplib.SMTP_SSL(
+        server = smtplib.SMTP(
             'smtp.gmail.com',
-            465,
+            587,
             timeout=15
         )
 
-        server.login(SENDER_EMAIL, APP_PASSWORD)
+        server.starttls()
+
+        server.login(
+            SENDER_EMAIL,
+            APP_PASSWORD
+        )
 
         server.send_message(msg)
 
