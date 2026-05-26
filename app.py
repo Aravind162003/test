@@ -729,8 +729,19 @@ def admin_view_users():
 @app.route('/download-results')
 def download_results():
 
+    csv_path = (
+        'results/performance_results.csv'
+    )
+
+    if not os.path.exists(csv_path):
+
+        return (
+            "CSV file not generated yet.",
+            404
+        )
+
     return send_file(
-        'results/performance_results.csv',
+        csv_path,
         as_attachment=True
     )
 
