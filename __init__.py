@@ -2,41 +2,78 @@ import time
 import psutil
 import os
 import csv
+
 from functools import wraps
 
 # ==========================================
 # POWER CONFIGURATION
 # ==========================================
+
 MAX_POWER_WATTS = 15.0
+
 IDLE_POWER_WATTS = 5.0
 
 # ==========================================
-# CSV FILE
+# RESULTS FOLDER
 # ==========================================
-CSV_FILE = "performance_results.csv"
+
+RESULTS_FOLDER = "results"
+
+os.makedirs(
+    RESULTS_FOLDER,
+    exist_ok=True
+)
 
 # ==========================================
-# CREATE CSV IF NOT EXISTS
+# CSV FILE PATH
 # ==========================================
+
+CSV_FILE = os.path.join(
+    RESULTS_FOLDER,
+    "performance_results.csv"
+)
+
+# ==========================================
+# CREATE CSV FILE IF NOT EXISTS
+# ==========================================
+
 if not os.path.exists(CSV_FILE):
 
-    with open(CSV_FILE, mode='w', newline='') as file:
+    with open(
+        CSV_FILE,
+        mode='w',
+        newline=''
+    ) as file:
 
         writer = csv.writer(file)
 
         writer.writerow([
+
             "Algorithm",
+
             "Operation",
+
             "File Size (MB)",
+
             "Execution Time (s)",
+
             "CPU Usage (%)",
+
             "Energy Consumption (J)"
+
         ])
 
 # ==========================================
 # ENERGY CALCULATION
 # ==========================================
+
 def calculate_energy(cpu_percent, exec_time):
+
+    """
+    Estimates energy consumption
+    in Joules using CPU utilization
+    and execution time.
+    """
 
     average_power = (
 
@@ -56,9 +93,18 @@ def calculate_energy(cpu_percent, exec_time):
     return energy_joules
 
 # ==========================================
-# MAIN DECORATOR
+# MAIN PERFORMANCE DECORATOR
 # ==========================================
+
 def measure_performance(algo_name, operation):
+
+    """
+    Measures:
+    - File Size
+    - Execution Time
+    - CPU Usage
+    - Energy Consumption
+    """
 
     def decorator(func):
 
@@ -68,6 +114,7 @@ def measure_performance(algo_name, operation):
             # ==================================
             # FILE SIZE DETECTION
             # ==================================
+
             file_size_mb = "N/A"
 
             file_path = (
@@ -97,39 +144,68 @@ def measure_performance(algo_name, operation):
                         )
 
                 except Exception:
+
                     pass
 
             # ==================================
-            # START CPU + TIMER
+            # CURRENT PROCESS
             # ==================================
-            psutil.cpu_percent(interval=None)
+
+            process = psutil.Process(
+                os.getpid()
+            )
+
+            # ==================================
+            # INITIALIZE CPU MONITOR
+            # ==================================
+
+            process.cpu_percent(
+                interval=None
+            )
+
+            # ==================================
+            # START TIMER
+            # ==================================
 
             start_time = (
                 time.perf_counter()
             )
 
             # ==================================
-            # EXECUTE FUNCTION
+            # EXECUTE ORIGINAL FUNCTION
             # ==================================
+
             result = func(*args, **kwargs)
 
             # ==================================
             # STOP TIMER
             # ==================================
+
             end_time = (
                 time.perf_counter()
             )
 
+            # ==================================
+            # CPU USAGE
+            # ==================================
+
             cpu_percent = (
-                psutil.cpu_percent(interval=None)
+                process.cpu_percent(
+                    interval=None
+                )
             )
 
             # ==================================
-            # CALCULATIONS
+            # EXECUTION TIME
             # ==================================
+
             exec_time = (
                 end_time - start_time
             )
+
+            # ==================================
+            # ENERGY CONSUMPTION
+            # ==================================
 
             energy = calculate_energy(
                 cpu_percent,
@@ -137,20 +213,29 @@ def measure_performance(algo_name, operation):
             )
 
             # ==================================
-            # PRINT OUTPUT
+            # TERMINAL OUTPUT
             # ==================================
+
             print(
+
                 f"[{algo_name}] "
+
                 f"{operation} | "
+
                 f"Size: {file_size_mb} MB | "
+
                 f"Time: {exec_time:.6f}s | "
-                f"CPU: {cpu_percent}% | "
+
+                f"CPU: {cpu_percent:.2f}% | "
+
                 f"Energy: {energy:.6f} J"
+
             )
 
             # ==================================
             # SAVE TO CSV
             # ==================================
+
             with open(
                 CSV_FILE,
                 mode='a',
@@ -160,12 +245,19 @@ def measure_performance(algo_name, operation):
                 writer = csv.writer(file)
 
                 writer.writerow([
+
                     algo_name,
+
                     operation,
+
                     file_size_mb,
+
                     round(exec_time, 6),
-                    cpu_percent,
+
+                    round(cpu_percent, 2),
+
                     round(energy, 6)
+
                 ])
 
             return result
