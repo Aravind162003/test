@@ -14,7 +14,7 @@ MAX_POWER_WATTS = 15.0
 IDLE_POWER_WATTS = 5.0
 
 # ==========================================
-# RESULTS FOLDER
+# RESULTS FOLDER (RENDER COMPATIBLE)
 # ==========================================
 
 RESULTS_FOLDER = "results"
@@ -64,7 +64,7 @@ if not os.path.exists(CSV_FILE):
         ])
 
 # ==========================================
-# ENERGY CALCULATION
+# ENERGY CALCULATION FUNCTION
 # ==========================================
 
 def calculate_energy(cpu_percent, exec_time):
@@ -93,7 +93,7 @@ def calculate_energy(cpu_percent, exec_time):
     return energy_joules
 
 # ==========================================
-# MAIN PERFORMANCE DECORATOR
+# PERFORMANCE DECORATOR
 # ==========================================
 
 def measure_performance(algo_name, operation):
