@@ -19,7 +19,10 @@ app.secret_key = os.getenv(
 # ==========================================
 # 📧 SENDGRID CONFIGURATION
 # ==========================================
-SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+
+SENDGRID_API_KEY = os.getenv(
+    "SENDGRID_API_KEY"
+)
 
 SENDER_EMAIL = os.getenv(
     "SENDER_EMAIL",
@@ -27,10 +30,13 @@ SENDER_EMAIL = os.getenv(
 )
 
 def send_real_email(receiver_email, otp_code, filename, algo):
+
     """Sends OTP using SendGrid API."""
 
     if not SENDGRID_API_KEY:
+
         print("SENDGRID_API_KEY not set")
+
         return False
 
     try:
@@ -86,6 +92,7 @@ def send_real_email(receiver_email, otp_code, filename, algo):
     except Exception as e:
 
         import traceback
+
         print(traceback.format_exc())
 
         return False
@@ -93,12 +100,15 @@ def send_real_email(receiver_email, otp_code, filename, algo):
 # ==========================================
 # 💾 SIMULATED DATABASE
 # ==========================================
+
 USERS = {}
+
 FILES_DB = {}
 
 # ==========================================
 # 📁 CREATE REQUIRED FOLDERS
 # ==========================================
+
 os.makedirs(
     "storage/encrypted_files",
     exist_ok=True
@@ -114,13 +124,25 @@ os.makedirs(
     exist_ok=True
 )
 
+os.makedirs(
+    "results",
+    exist_ok=True
+)
+
 # ==========================================
 # 🌐 ROUTES
 # ==========================================
 
 @app.route('/')
 def index():
-    return redirect(url_for('login'))
+
+    return redirect(
+        url_for('login')
+    )
+
+# ==========================================
+# REGISTER
+# ==========================================
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -142,8 +164,7 @@ def register():
         if username in USERS:
 
             flash(
-                "Username already exists! "
-                "Choose another.",
+                "Username already exists!",
                 "error"
             )
 
@@ -171,6 +192,10 @@ def register():
     return render_template(
         'register.html'
     )
+
+# ==========================================
+# LOGIN
+# ==========================================
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -210,6 +235,10 @@ def login():
     return render_template(
         'login.html'
     )
+
+# ==========================================
+# DASHBOARD
+# ==========================================
 
 @app.route('/dashboard')
 def dashboard():
@@ -258,6 +287,10 @@ def dashboard():
             USERS.keys()
         )
     )
+
+# ==========================================
+# FILE UPLOAD
+# ==========================================
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -385,6 +418,10 @@ def upload_file():
         url_for('dashboard')
     )
 
+# ==========================================
+# SHARE FILE
+# ==========================================
+
 @app.route('/share/<file_id>', methods=['POST'])
 def share_file(file_id):
 
@@ -499,6 +536,10 @@ def share_file(file_id):
     return redirect(
         url_for('dashboard')
     )
+
+# ==========================================
+# VERIFY OTP
+# ==========================================
 
 @app.route('/verify/<file_id>', methods=['GET', 'POST'])
 def verify_otp(file_id):
@@ -672,10 +713,30 @@ def verify_otp(file_id):
         filename=file_data['filename']
     )
 
+# ==========================================
+# ADMIN USERS
+# ==========================================
+
 @app.route('/admin/users')
 def admin_view_users():
 
     return jsonify(USERS)
+
+# ==========================================
+# DOWNLOAD CSV RESULTS
+# ==========================================
+
+@app.route('/download-results')
+def download_results():
+
+    return send_file(
+        'results/performance_results.csv',
+        as_attachment=True
+    )
+
+# ==========================================
+# LOGOUT
+# ==========================================
 
 @app.route('/logout')
 def logout():
@@ -685,6 +746,10 @@ def logout():
     return redirect(
         url_for('login')
     )
+
+# ==========================================
+# MAIN
+# ==========================================
 
 if __name__ == '__main__':
 
